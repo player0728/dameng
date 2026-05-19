@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据接入配置平台 - 多源异构数据采集底座</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f5f7fa;
+            color: #1e293b;
+            padding: 32px 24px;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        /* 卡片通用样式 */
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 28px 32px;
+            margin-bottom: 24px;
+            transition: box-shadow 0.2s;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e9eef3;
+        }
+
+        .card-header h2 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .card-header .step-badge {
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        /* Steps 步骤条 */
+        .steps {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border-radius: 60px;
+            padding: 12px 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            position: relative;
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .step-item.active .step-number {
+            background: #4f46e5;
+            color: white;
+            box-shadow: 0 4px 8px rgba(79,70,229,0.2);
+        }
+
+        .step-item.completed .step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .step-label {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+
+        .step-item.active .step-label {
+            color: #4f46e5;
+            font-weight: 600;
+        }
+
+        .step-connector {
+            flex: 0.1;
+            height: 2px;
+            background: #e2e8f0;
+            margin: 0 8px;
+        }
+
+        /* 表单样式 */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #334155;
+        }
+
+        .form-group label .required {
+            color: #ef4444;
+            margin-left: 4px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            background: white;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 6px 14px;
+            border-radius: 30px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .checkbox-item input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+
+        .dynamic-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        .dynamic-table th, .dynamic-table td {
+            border: 1px solid #e2e8f0;
+            padding: 12px 12px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        .dynamic-table th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .btn-sm {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 10px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #4f46e5;
+            color: #4f46e5;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+
+        .flex-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+            gap: 12px;
+        }
+
+        .alert {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            border-left-color: #10b981;
+        }
+
+        .preview-table {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table.preview {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        table.preview th, table.preview td {
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .tag {
+            background: #eef2ff;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        hr {
+            margin: 20px 0;
+            border-color: #eef2f5;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 顶部步骤条 -->
+    <div class="steps">
+        <div class="step-item active" data-step="1">
+            <div class="step-number">1</div>
+            <div class="step-label">选择类型</div>
+            <div class="step-connector"></div>
+        </div>
+        <div class="step-item" data-step="2">
+            <div class="step-number">2</div>
+            <div class="step-label">连接配置</div>
+            <div class="step-connector"></div>
+        </div>
+        <div class="step-item" data-step="3">
+            <div class="step-number">3</div>
+            <div class="step-label">字段映射</div>
+            <div class="step-connector"></div>
+        </div>
+        <div class="step-item" data-step="4">
+            <div class="step-number">4</div>
+            <div class="step-label">调度配置</div>
+            <div class="step-connector"></div>
+        </div>
+        <div class="step-item" data-step="5">
+            <div class="step-number">5</div>
+            <div class="step-label">预览确认</div>
+        </div>
+    </div>
+
+    <!-- 第一步：选择数据源类型 -->
+    <div id="step1Panel" class="card">
+        <div class="card-header">
+            <h2>第一步：选择数据源类型</h2>
+            <span class="step-badge">基础信息</span>
+        </div>
+        <div class="radio-group">
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="radio" name="sourceType" value="mysql" checked> 🗄️ MySQL
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="radio" name="sourceType" value="api"> 🌐 API 接口
+            </label>
+        </div>
+        <div class="flex-buttons" style="justify-content: flex-end; margin-top: 20px;">
+            <button class="btn-primary" id="toStep2Btn">下一步：连接配置 →</button>
+        </div>
+    </div>
+
+    <!-- 第二步：连接配置 (动态显示 MySQL / API) -->
+    <div id="step2Panel" class="card" style="display: none;">
+        <div class="card-header">
+            <h2>第二步：连接配置</h2>
+            <span class="step-badge" id="step2Badge">MySQL 配置</span>
+        </div>
+        <!-- MySQL 配置区域 -->
+        <div id="mysqlConfigArea">
+            <div class="form-row">
+                <div class="form-group"><label>数据源名称 <span class="required">*</span></label><input type="text" id="mysqlName" placeholder="例如：生产环境用户库"></div>
+                <div class="form-group"><label>主机地址 <span class="required">*</span></label><input type="text" id="mysqlHost" value="localhost"></div>
+                <div class="form-group"><label>端口 <span class="required">*</span></label><input type="number" id="mysqlPort" value="3306"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>数据库名 <span class="required">*</span></label><input type="text" id="mysqlDatabase" placeholder="seatunnel_prod"></div>
+                <div class="form-group"><label>用户名 <span class="required">*</span></label><input type="text" id="mysqlUser" value="root"></div>
+                <div class="form-group"><label>密码 <span class="required">*</span></label><input type="password" id="mysqlPassword" value="qwer123."></div>
+            </div>
+            <div class="flex-buttons" style="justify-content: flex-start;">
+                <button class="btn-secondary" id="testMySQLBtn">🔌 测试连接</button>
+                <span id="mysqlTestMsg" style="margin-left: 12px; font-size: 0.85rem;"></span>
+            </div>
+            <hr>
+            <h3 style="font-size: 1rem; margin: 16px 0 12px;">📋 数据表选择</h3>
+            <div class="form-row">
+                <div class="form-group"><label>选择数据库</label><select id="mysqlDbSelect"><option>seatunnel_prod</option><option>seatunnel_demo</option></select></div>
+                <div class="form-group"><label>选择数据表</label><select id="mysqlTableSelect"><option>users</option><option>orders</option></select></div>
+            </div>
+            <div class="form-group"><label>选择字段 (多选)</label><div id="mysqlFieldsCheckbox" class="checkbox-group"><div class="checkbox-item"><input type="checkbox" checked> id</div><div class="checkbox-item"><input type="checkbox" checked> username</div><div class="checkbox-item"><input type="checkbox" checked> email</div><div class="checkbox-item"><input type="checkbox" checked> created_at</div></div></div>
+            <hr>
+            <h3 style="font-size: 1rem; margin: 16px 0 12px;">⚙️ SQL 配置（可选）</h3>
+            <div class="form-row">
+                <div class="form-group"><label>自定义 SQL</label><textarea rows="2" placeholder="SELECT * FROM users WHERE status=1"></textarea></div>
+                <div class="form-group"><label>WHERE 条件</label><input placeholder="status = 1"></div>
+                <div class="form-group"><label>数据条数限制</label><input type="number" placeholder="1000"></div>
+            </div>
+            <hr>
+            <h3 style="font-size: 1rem; margin: 16px 0 12px;">🔄 增量同步配置</h3>
+            <div class="form-row">
+                <div class="form-group"><label>是否开启增量</label><label><input type="checkbox" id="incSwitch"> 开启</label></div>
+                <div class="form-group"><label>增量字段</label><select id="incColumn"><option>update_time</option><option>id</option></select></div>
+                <div class="form-group"><label>起始值</label><input placeholder="2025-01-01 00:00:00"></div>
+            </div>
+        </div>
+
+        <!-- API 配置区域 (默认隐藏) -->
+        <div id="apiConfigArea" style="display: none;">
+            <div class="form-row">
+                <div class="form-group"><label>数据源名称 <span class="required">*</span></label><input type="text" id="apiName" placeholder="订单API"></div>
+                <div class="form-group"><label>请求地址 <span class="required">*</span></label><input type="text" id="apiUrl" value="https://jsonplaceholder.typicode.com/users"></div>
+                <div class="form-group"><label>请求方式</label><select id="apiMethod"><option>GET</option><option>POST</option></select></div>
+            </div>
+            <div class="form-row"><div class="form-group"><label>Content-Type</label><select><option>application/json</option></select></div></div>
+            <div class="form-group"><label>Query 参数</label><button class="btn-sm" id="addQueryRow" style="margin-bottom: 8px;">+ 添加一行</button><table class="dynamic-table" id="queryParamsTable"><thead><tr><th>Key</th><th>Value</th><th></th></tr></thead><tbody><tr><td><input placeholder="page"></td><td><input placeholder="1"></td><td><button class="btn-icon">🗑️</button></td></tr></tbody></table></div>
+            <div class="form-group"><label>请求头 Headers</label><button class="btn-sm" id="addHeaderRow">+ 添加一行</button><table class="dynamic-table" id="headersTable"><thead><tr><th>Key</th><th>Value</th><th></th></tr></thead><tbody></tbody></table></div>
+            <div class="form-group"><label>认证方式</label><select id="authType"><option>无认证</option><option>Bearer Token</option><option>Basic Auth</option></select><div id="authDetail" style="margin-top: 12px;"></div></div>
+            <div class="form-group"><label>数据节点路径</label><input placeholder="data.list 用于提取数组"></div>
+            <div class="flex-buttons"><button class="btn-secondary" id="testApiBtn">📡 发送请求 / 测试接口</button><span id="apiTestMsg"></span></div>
+            <div id="apiRawPreview" class="alert" style="display: none; margin-top: 12px; background:#f1f5f9;"></div>
+        </div>
+
+        <div class="flex-buttons" style="margin-top: 28px;">
+            <button class="btn-secondary" id="backToStep1">← 上一步</button>
+            <button class="btn-primary" id="toStep3Btn">下一步：字段映射 →</button>
+        </div>
+    </div>
+
+    <!-- 第三步：字段映射 -->
+    <div id="step3Panel" class="card" style="display: none;">
+        <div class="card-header"><h2>第三步：字段映射</h2><span class="step-badge">清洗转换</span></div>
+        <table class="dynamic-table" id="mappingTable">
+            <thead><tr><th>源字段名</th><th>目标字段名</th><th>字段类型</th><th>操作</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td><input value="id"></td><td><select><option>INT</option><option>STRING</option><option>DATETIME</option></select></td><td><button class="btn-icon">🗑️</button></td></tr>
+                <tr><td>username</td><td><input value="user_name"></td><td><select><option>STRING</option><option>INT</option></select></td><td><button class="btn-icon">🗑️</button></td></tr>
+                <tr><td>email</td><td><input value="email"></td><td><select><option>STRING</option></select></td><td><button class="btn-icon">🗑️</button></td></tr>
+            </tbody>
+        </table>
+        <button class="btn-sm" id="addFieldBtn" style="margin-top: 12px;">+ 手动添加字段</button>
+        <div class="flex-buttons" style="margin-top: 28px;">
+            <button class="btn-secondary" id="backToStep2">← 上一步</button>
+            <button class="btn-primary" id="toStep4Btn">下一步：调度配置 →</button>
+        </div>
+    </div>
+
+    <!-- 第四步：任务调度配置 -->
+    <div id="step4Panel" class="card" style="display: none;">
+        <div class="card-header"><h2>第四步：任务调度配置</h2><span class="step-badge">定时策略</span></div>
+        <div class="form-row"><div class="form-group"><label>任务名称 <span class="required">*</span></label><input type="text" id="taskName" value="用户数据同步任务"></div></div>
+        <div class="form-group"><label>执行方式</label><div class="radio-group"><label><input type="radio" name="execType" value="manual" checked> 手动执行</label><label><input type="radio" name="execType" value="schedule"> 定时执行</label></div></div>
+        <div class="form-group" id="cronGroup" style="display: none;"><label>Cron 表达式</label><input placeholder="0 0 * * *" value="0 0 * * *"></div>
+        <div class="form-group"><label>失败重试次数</label><input type="number" value="3"></div>
+        <div class="flex-buttons">
+            <button class="btn-secondary" id="backToStep3">← 上一步</button>
+            <button class="btn-primary" id="toStep5Btn">下一步：预览确认 →</button>
+        </div>
+    </div>
+
+    <!-- 第五步：数据预览 + 底部操作 -->
+    <div id="step5Panel" class="card" style="display: none;">
+        <div class="card-header"><h2>第五步：数据预览 & 确认</h2><span class="step-badge">最终验证</span></div>
+        <button class="btn-outline" id="previewDataBtn">🔍 预览数据 (前10条)</button>
+        <div id="previewArea" class="preview-table" style="margin-top: 20px;">
+            <div class="alert alert-success" style="background:#f0fdf4;">💡 以下为预览数据，仅供参考，不影响实际同步</div>
+            <table class="preview" id="previewTable"><thead><tr><th>id</th><th>username</th><th>email</th><th>created_at</th></tr></thead><tbody><tr><td colspan="4">点击预览加载示例数据</td></tr></tbody></table>
+        </div>
+        <div class="flex-buttons" style="margin-top: 28px;">
+            <button class="btn-secondary" id="backToStep4">← 上一步</button>
+            <button class="btn-secondary" id="saveDraftBtn">💾 保存草稿</button>
+            <button class="btn-primary" id="executeNowBtn">🚀 立即执行</button>
+            <button class="btn-secondary" id="cancelBtn">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 简单的页面步骤切换逻辑 + 交互
+    let currentStep = 1;
+    const sourceTypeRadios = document.querySelectorAll('input[name="sourceType"]');
+    const mysqlArea = document.getElementById('mysqlConfigArea');
+    const apiArea = document.getElementById('apiConfigArea');
+    const step2Badge = document.getElementById('step2Badge');
+
+    function updateStepVisibility() {
+        document.getElementById('step1Panel').style.display = currentStep === 1 ? 'block' : 'none';
+        document.getElementById('step2Panel').style.display = currentStep === 2 ? 'block' : 'none';
+        document.getElementById('step3Panel').style.display = currentStep === 3 ? 'block' : 'none';
+        document.getElementById('step4Panel').style.display = currentStep === 4 ? 'block' : 'none';
+        document.getElementById('step5Panel').style.display = currentStep === 5 ? 'block' : 'none';
+
+        // 更新步骤条样式
+        document.querySelectorAll('.step-item').forEach((item, idx) => {
+            const stepNum = idx + 1;
+            item.classList.remove('active', 'completed');
+            if (stepNum === currentStep) item.classList.add('active');
+            else if (stepNum < currentStep) item.classList.add('completed');
+        });
+    }
+
+    // 切换数据源类型展示
+    function toggleSourceConfig() {
+        const isMysql = document.querySelector('input[name="sourceType"]:checked').value === 'mysql';
+        mysqlArea.style.display = isMysql ? 'block' : 'none';
+        apiArea.style.display = isMysql ? 'none' : 'block';
+        step2Badge.innerText = isMysql ? 'MySQL 配置' : 'API 配置';
+    }
+
+    sourceTypeRadios.forEach(radio => radio.addEventListener('change', toggleSourceConfig));
+
+    // 测试MySQL连接模拟
+    document.getElementById('testMySQLBtn')?.addEventListener('click', () => {
+        const msgSpan = document.getElementById('mysqlTestMsg');
+        msgSpan.innerHTML = '⏳ 正在连接...';
+        setTimeout(() => {
+            msgSpan.innerHTML = '✅ 连接成功！数据库版本 MySQL 8.0';
+            msgSpan.style.color = '#10b981';
+        }, 600);
+    });
+
+    // 测试API模拟
+    document.getElementById('testApiBtn')?.addEventListener('click', () => {
+        const msgSpan = document.getElementById('apiTestMsg');
+        const previewDiv = document.getElementById('apiRawPreview');
+        msgSpan.innerHTML = '⏳ 请求中...';
+        setTimeout(() => {
+            const mockJson = { code: 200, data: [{ id: 1, name: "张三" }, { id: 2, name: "李四" }] };
+            previewDiv.style.display = 'block';
+            previewDiv.innerHTML = `<strong>接口返回原始JSON:</strong><pre style="margin-top:8px;">${JSON.stringify(mockJson, null, 2)}</pre>`;
+            msgSpan.innerHTML = '✅ 请求成功';
+        }, 500);
+    });
+
+    // 动态添加参数行 (Query/Headers)
+    function addRowToTable(tableId, tbodySelector) {
+        const tbody = document.querySelector(`#${tableId} tbody`);
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `<td><input placeholder="Key"></td><td><input placeholder="Value"></td><td><button class="btn-icon">🗑️</button></td>`;
+        tbody.appendChild(newRow);
+        newRow.querySelector('.btn-icon').addEventListener('click', () => newRow.remove());
+    }
+    document.getElementById('addQueryRow')?.addEventListener('click', () => addRowToTable('queryParamsTable', 'tbody'));
+    document.getElementById('addHeaderRow')?.addEventListener('click', () => addRowToTable('headersTable', 'tbody'));
+
+    // 认证方式动态内容
+    const authSelect = document.getElementById('authType');
+    const authDetailDiv = document.getElementById('authDetail');
+    authSelect?.addEventListener('change', () => {
+        const val = authSelect.value;
+        if (val === 'Bearer Token') authDetailDiv.innerHTML = '<input placeholder="Bearer Token值" style="width:100%;">';
+        else if (val === 'Basic Auth') authDetailDiv.innerHTML = '<div class="form-row"><input placeholder="用户名"><input placeholder="密码"></div>';
+        else authDetailDiv.innerHTML = '';
+    });
+
+    // 字段映射增加行
+    document.getElementById('addFieldBtn')?.addEventListener('click', () => {
+        const tbody = document.querySelector('#mappingTable tbody');
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `<td>new_field</td><td><input value="new_field"></td><td><select><option>STRING</option><option>INT</option></select></td><td><button class="btn-icon">🗑️</button></td>`;
+        tbody.appendChild(newRow);
+        newRow.querySelector('.btn-icon').addEventListener('click', () => newRow.remove());
+    });
+
+    // 执行方式切换
+    const execRadios = document.querySelectorAll('input[name="execType"]');
+    const cronGroup = document.getElementById('cronGroup');
+    execRadios.forEach(r => r.addEventListener('change', (e) => {
+        cronGroup.style.display = e.target.value === 'schedule' ? 'block' : 'none';
+    }));
+
+    // 预览数据模拟
+    document.getElementById('previewDataBtn')?.addEventListener('click', () => {
+        const previewBody = document.querySelector('#previewTable tbody');
+        if(previewBody) {
+            previewBody.innerHTML = `
+                <tr><td>1</td><td>admin</td><td>admin@example.com</td><td>2025-03-20 10:00:00</td></tr>
+                <tr><td>2</td><td>etl_user</td><td>etl@datapipeline.com</td><td>2025-04-01 14:22:10</td></tr>
+                <tr><td>3</td><td>service_account</td><td>svc@seatunnel.com</td><td>2025-04-10 09:15:44</td></tr>
+                <tr><td colspan="4">... 仅展示前10条模拟数据，实际运行时将拉取真实数据 ...</td></tr>`;
+        }
+    });
+
+    // 步骤导航按钮
+    document.getElementById('toStep2Btn')?.addEventListener('click', () => { currentStep = 2; updateStepVisibility(); toggleSourceConfig(); });
+    document.getElementById('backToStep1')?.addEventListener('click', () => { currentStep = 1; updateStepVisibility(); });
+    document.getElementById('toStep3Btn')?.addEventListener('click', () => { currentStep = 3; updateStepVisibility(); });
+    document.getElementById('backToStep2')?.addEventListener('click', () => { currentStep = 2; updateStepVisibility(); toggleSourceConfig(); });
+    document.getElementById('toStep4Btn')?.addEventListener('click', () => { currentStep = 4; updateStepVisibility(); });
+    document.getElementById('backToStep3')?.addEventListener('click', () => { currentStep = 3; updateStepVisibility(); });
+    document.getElementById('toStep5Btn')?.addEventListener('click', () => { currentStep = 5; updateStepVisibility(); });
+    document.getElementById('backToStep4')?.addEventListener('click', () => { currentStep = 4; updateStepVisibility(); });
+    
+    // 保存草稿/立即执行 弹框模拟
+    document.getElementById('saveDraftBtn')?.addEventListener('click', () => alert('草稿已保存 (配置已存储至本地/后端)'));
+    document.getElementById('executeNowBtn')?.addEventListener('click', () => alert('任务已提交并立即执行，将按照 MySQL/API 配置进行数据采集'));
+    document.getElementById('cancelBtn')?.addEventListener('click', () => alert('已取消配置'));
+
+    // 初始化删除按钮效果
+    function initRemoveButtons() {
+        document.querySelectorAll('.btn-icon').forEach(btn => {
+            btn.addEventListener('click', (e) => { if(confirm('删除该行?')) e.target.closest('tr')?.remove(); });
+        });
+    }
+    initRemoveButtons();
+    // 监听动态添加删除 (简单重新绑定)
+    const observer = new MutationObserver(() => initRemoveButtons());
+    observer.observe(document.body, { childList: true, subtree: true });
+</script>
+</body>
+</html>

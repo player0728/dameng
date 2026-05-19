@@ -1,0 +1,18 @@
+[
+  {
+    "repo_url": "https://github.com/player0728/gitroom.git",
+    "local_path": "D:\\software\\apache-seatunnel-2.3.5\\gitroom",
+    "branch": "main",
+    "mode": "auto",
+    "polling_interval": 10,
+    "status": "stopped"
+  },
+  {
+    "repo_url": "https://github.com/player0728/gitroom.git",
+    "local_path": "D:\\software\\apache-seatunnel-2.3.5\\gitroom",
+    "branch": "main",
+    "mode": "manual",
+    "polling_interval": 10,
+    "status": "stopped"
+  }
+]

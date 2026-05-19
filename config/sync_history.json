@@ -1,0 +1,221 @@
+[
+  {
+    "id": "TEST.USERS->TEST.TEST_1",
+    "source_db": "TEST",
+    "source_table": "USERS",
+    "target_db": "TEST",
+    "target_table": "TEST_1",
+    "field_mapping": [
+      {
+        "source": "USER_ID",
+        "target": "ID",
+        "type": "INT"
+      },
+      {
+        "source": "USERNAME",
+        "target": "USERNAME",
+        "type": "STRING"
+      },
+      {
+        "source": "PASSWORD",
+        "target": "PASSWORD",
+        "type": "STRING"
+      },
+      {
+        "source": "AGE",
+        "target": "AGE",
+        "type": "INT"
+      }
+    ],
+    "created_at": "2026-05-12T11:31:43.593036",
+    "updated_at": "2026-05-12T11:31:43.593060"
+  },
+  {
+    "id": "seatunnel_prod.testtable->target.test_5",
+    "source_db": "seatunnel_prod",
+    "source_table": "testtable",
+    "target_db": "target",
+    "target_table": "test_5",
+    "field_mapping": [
+      {
+        "source": "id",
+        "target": "usid",
+        "type": "INT"
+      }
+    ],
+    "created_at": "2026-05-12T12:08:08.433681",
+    "updated_at": "2026-05-12T12:08:08.433700"
+  },
+  {
+    "id": "seatunnel_prod.testtable->target.test_1",
+    "source_db": "seatunnel_prod",
+    "source_table": "testtable",
+    "target_db": "target",
+    "target_table": "test_1",
+    "field_mapping": [
+      {
+        "source": "id",
+        "target": "usid",
+        "type": "INT"
+      }
+    ],
+    "created_at": "2026-05-14T23:31:11.840955",
+    "updated_at": "2026-05-14T23:44:07.154628"
+  },
+  {
+    "id": "seatunnel_prod.testtable->target.test_2",
+    "source_db": "seatunnel_prod",
+    "source_table": "testtable",
+    "target_db": "target",
+    "target_table": "test_2",
+    "field_mapping": [
+      {
+        "source": "id",
+        "target": "usid",
+        "type": "INT"
+      }
+    ],
+    "created_at": "2026-05-14T23:38:28.546582",
+    "updated_at": "2026-05-14T23:38:28.546603"
+  },
+  {
+    "id": "seatunnel_prod.testtable->target.test_3",
+    "source_db": "seatunnel_prod",
+    "source_table": "testtable",
+    "target_db": "target",
+    "target_table": "test_3",
+    "field_mapping": [
+      {
+        "source": "id",
+        "target": "usid",
+        "type": "INT"
+      }
+    ],
+    "created_at": "2026-05-14T23:59:56.244484",
+    "updated_at": "2026-05-14T23:59:56.244503"
+  },
+  {
+    "id": "seatunnel_prod.testtable->target.test_7",
+    "source_db": "seatunnel_prod",
+    "source_table": "testtable",
+    "target_db": "target",
+    "target_table": "test_7",
+    "field_mapping": [
+      {
+        "source": "id",
+        "target": "usid",
+        "type": "INT"
+      }
+    ],
+    "created_at": "2026-05-15T00:45:20.015145",
+    "updated_at": "2026-05-15T00:45:20.015166"
+  },
+  {
+    "id": "seatunnel_prod.testtable->target.test_4",
+    "source_db": "seatunnel_prod",
+    "source_table": "testtable",
+    "target_db": "target",
+    "target_table": "test_4",
+    "field_mapping": [
+      {
+        "source": "id",
+        "target": "usid",
+        "type": "INT"
+      }
+    ],
+    "created_at": "2026-05-15T14:39:49.368975",
+    "updated_at": "2026-05-15T14:39:49.368995"
+  },
+  {
+    "id": "test.users->target.test_1",
+    "source_db": "test",
+    "source_table": "users",
+    "target_db": "target",
+    "target_table": "test_1",
+    "field_mapping": [
+      {
+        "source": "user_id",
+        "target": "id",
+        "type": "INT"
+      },
+      {
+        "source": "username",
+        "target": "username",
+        "type": "STRING"
+      },
+      {
+        "source": "email",
+        "target": "email",
+        "type": "STRING"
+      },
+      {
+        "source": "age",
+        "target": "age",
+        "type": "INT"
+      },
+      {
+        "source": "city",
+        "target": "city",
+        "type": "STRING"
+      },
+      {
+        "source": "status",
+        "target": "status",
+        "type": "INT"
+      },
+      {
+        "source": "created_at",
+        "target": "created_at",
+        "type": "STRING"
+      }
+    ],
+    "created_at": "2026-05-15T15:24:51.759093",
+    "updated_at": "2026-05-15T15:24:51.759111"
+  },
+  {
+    "id": "test.users->target.test_2",
+    "source_db": "test",
+    "source_table": "users",
+    "target_db": "target",
+    "target_table": "test_2",
+    "field_mapping": [
+      {
+        "source": "user_id",
+        "target": "id",
+        "type": "INT"
+      },
+      {
+        "source": "username",
+        "target": "username",
+        "type": "STRING"
+      },
+      {
+        "source": "email",
+        "target": "email",
+        "type": "STRING"
+      },
+      {
+        "source": "age",
+        "target": "age",
+        "type": "INT"
+      },
+      {
+        "source": "city",
+        "target": "city",
+        "type": "STRING"
+      },
+      {
+        "source": "status",
+        "target": "status",
+        "type": "INT"
+      },
+      {
+        "source": "created_at",
+        "target": "created_at",
+        "type": "STRING"
+      }
+    ],
+    "created_at": "2026-05-15T16:06:57.648209",
+    "updated_at": "2026-05-15T16:06:57.648229"
+  }
+]

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SeaTunnel 配置服务</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .card-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            color: #333;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            font-weight: 500;
+            color: #666;
+        }
+        .tab:hover {
+            background: #fff;
+            color: #667eea;
+        }
+        .tab.active {
+            background: #fff;
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 13px;
+            border: 1px solid #e9ecef;
+        }
+        .config-preview {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .job-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .job-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .job-item:last-child {
+            border-bottom: none;
+        }
+        .job-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .job-status.running {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .job-status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .job-status.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .hidden {
+            display: none;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 20px 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #667eea;
+        }
+        .field-mapping-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 100px 40px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .field-mapping-row input,
+        .field-mapping-row select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 SeaTunnel 配置服务</h1>
+            <p>数据同步配置的生成、管理和执行</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="config">📝 配置生成</div>
+            <div class="tab" data-tab="configs">📋 配置管理</div>
+            <div class="tab" data-tab="jobs">⚡ 任务执行</div>
+        </div>
+
+        <div id="config" class="tab-content active">
+            <div class="card">
+                <div class="card-header">数据源配置</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>数据源类型</label>
+                        <select id="sourceType" onchange="toggleSourceFields()">
+                            <option value="mysql">MySQL 数据库</option>
+                            <option value="api">HTTP API</option>
+                            <option value="test">测试模式</option>
+                        </select>
+                    </div>
+
+                    <div id="mysqlFields">
+                        <div class="section-title">源数据库</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>主机地址</label>
+                                <input type="text" id="sourceHost" value="127.0.0.1">
+                            </div>
+                            <div class="form-group">
+                                <label>端口</label>
+                                <input type="number" id="sourcePort" value="3306">
+                            </div>
+                            <div class="form-group">
+                                <label>用户名</label>
+                                <input type="text" id="sourceUser" value="root">
+                            </div>
+                            <div class="form-group">
+                                <label>密码</label>
+                                <input type="password" id="sourcePassword">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>数据库</label>
+                                <input type="text" id="sourceDatabase">
+                            </div>
+                            <div class="form-group">
+                                <label>表名</label>
+                                <input type="text" id="sourceTable">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="sourceCdc" onchange="toggleCdcFields()">
+                                启用 CDC 实时同步
+                            </label>
+                        </div>
+                        <div id="cdcFields" class="hidden">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>CDC Server ID</label>
+                                    <input type="text" id="serverId" value="100-200">
+                                </div>
+                                <div class="form-group">
+                                    <label>启动模式</label>
+                                    <select id="startupMode">
+                                        <option value="initial">initial</option>
+                                        <option value="earliest">earliest</option>
+                                        <option value="latest">latest</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="apiFields" class="hidden">
+                        <div class="section-title">API 配置</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>API URL</label>
+                                <input type="text" id="apiUrl" placeholder="https://api.example.com/data">
+                            </div>
+                            <div class="form-group">
+                                <label>请求方法</label>
+                                <select id="apiMethod">
+                                    <option value="GET">GET</option>
+                                    <option value="POST">POST</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>内容字段</label>
+                                <input type="text" id="contentField" placeholder="results">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">目标数据库配置</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>主机地址</label>
+                            <input type="text" id="sinkHost" value="127.0.0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>端口</label>
+                            <input type="number" id="sinkPort" value="3306">
+                        </div>
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" id="sinkUser" value="root">
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" id="sinkPassword">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>数据库</label>
+                            <input type="text" id="sinkDatabase">
+                        </div>
+                        <div class="form-group">
+                            <label>表名</label>
+                            <input type="text" id="sinkTable">
+                        </div>
+                        <div class="form-group">
+                            <label>数据库不存在时创建</label>
+                            <select id="createTable">
+                                <option value="true">是</option>
+                                <option value="false">否</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">字段映射</div>
+                <div class="card-body">
+                    <div id="fieldMappingList">
+                        <div class="field-mapping-row">
+                            <input type="text" placeholder="源字段" value="id">
+                            <input type="text" placeholder="目标字段" value="id">
+                            <select><option>STRING</option><option selected>INT</option><option>BOOLEAN</option></select>
+                            <button class="remove-btn" onclick="removeFieldRow(this)">×</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="addFieldRow()">+ 添加字段</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">任务配置</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>作业模式</label>
+                            <select id="jobMode">
+                                <option value="STREAMING">STREAMING (流式)</option>
+                                <option value="BATCH" selected>BATCH (批量)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>作业名称</label>
+                            <input type="text" id="jobName" value="DataSync">
+                        </div>
+                        <div class="form-group">
+                            <label>并行度</label>
+                            <input type="number" id="parallelism" value="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="generateConfig()">生成配置</button>
+                <button class="btn btn-success" onclick="saveConfig()">保存配置</button>
+                <button class="btn btn-secondary" onclick="runJob()">立即执行</button>
+            </div>
+
+            <div id="configResult" class="hidden" style="margin-top: 20px;">
+                <div class="card">
+                    <div class="card-header">生成的配置文件</div>
+                    <div class="card-body">
+                        <pre id="configContent" class="config-preview"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="configs" class="tab-content">
+            <div class="card">
+                <div class="card-header">已保存的配置</div>
+                <div class="card-body">
+                    <div id="configsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="jobs" class="tab-content">
+            <div class="card">
+                <div class="card-header">任务列表</div>
+                <div class="card-body">
+                    <div id="jobsList" class="job-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+                if (tab.dataset.tab === 'configs') loadConfigs();
+                if (tab.dataset.tab === 'jobs') loadJobs();
+            });
+        });
+
+        function toggleSourceFields() {
+            const sourceType = document.getElementById('sourceType').value;
+            document.getElementById('mysqlFields').classList.toggle('hidden', sourceType !== 'mysql');
+            document.getElementById('apiFields').classList.toggle('hidden', sourceType !== 'api');
+        }
+
+        function toggleCdcFields() {
+            const isCdc = document.getElementById('sourceCdc').checked;
+            document.getElementById('cdcFields').classList.toggle('hidden', !isCdc);
+            if (isCdc) {
+                document.getElementById('jobMode').value = 'STREAMING';
+            }
+        }
+
+        function addFieldRow() {
+            const container = document.getElementById('fieldMappingList');
+            const row = document.createElement('div');
+            row.className = 'field-mapping-row';
+            row.innerHTML = `
+                <input type="text" placeholder="源字段">
+                <input type="text" placeholder="目标字段">
+                <select><option selected>STRING</option><option>INT</option><option>BOOLEAN</option></select>
+                <button class="remove-btn" onclick="removeFieldRow(this)">×</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function removeFieldRow(btn) {
+            const rows = document.querySelectorAll('.field-mapping-row');
+            if (rows.length > 1) {
+                btn.parentElement.remove();
+            }
+        }
+
+        function getFieldMapping() {
+            const rows = document.querySelectorAll('.field-mapping-row');
+            const mapping = [];
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                const select = row.querySelector('select');
+                mapping.push({
+                    source: inputs[0].value,
+                    target: inputs[1].value,
+                    type: select.value
+                });
+            });
+            return mapping;
+        }
+
+        function showAlert(message, type = 'info') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            document.querySelector('.container').insertBefore(alert, document.querySelector('.container > div'));
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        async function generateConfig() {
+            const sourceType = document.getElementById('sourceType').value;
+            let sourceConfig = {};
+
+            if (sourceType === 'mysql') {
+                sourceConfig = {
+                    host: document.getElementById('sourceHost').value,
+                    port: parseInt(document.getElementById('sourcePort').value),
+                    user: document.getElementById('sourceUser').value,
+                    password: document.getElementById('sourcePassword').value,
+                    database: document.getElementById('sourceDatabase').value,
+                    table: document.getElementById('sourceTable').value,
+                    is_cdc: document.getElementById('sourceCdc').checked,
+                    server_id: document.getElementById('serverId').value,
+                    startup_mode: document.getElementById('startupMode').value
+                };
+            } else if (sourceType === 'api') {
+                sourceConfig = {
+                    url: document.getElementById('apiUrl').value,
+                    method: document.getElementById('apiMethod').value,
+                    content_field: document.getElementById('contentField').value,
+                    returns_array: true
+                };
+            }
+
+            const sinkConfig = {
+                host: document.getElementById('sinkHost').value,
+                port: parseInt(document.getElementById('sinkPort').value),
+                user: document.getElementById('sinkUser').value,
+                password: document.getElementById('sinkPassword').value,
+                database: document.getElementById('sinkDatabase').value,
+                table: document.getElementById('sinkTable').value,
+                create_table_if_not_exists: document.getElementById('createTable').value === 'true'
+            };
+
+            const request = {
+                source_type: sourceType,
+                source_config: sourceConfig,
+                sink_config: sinkConfig,
+                field_mapping: getFieldMapping(),
+                job_mode: document.getElementById('jobMode').value,
+                job_name: document.getElementById('jobName').value,
+                parallelism: parseInt(document.getElementById('parallelism').value)
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/config/generate`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(request)
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('configContent').textContent = data.config_content;
+                    document.getElementById('configResult').classList.remove('hidden');
+                    window.generatedConfigId = data.config_id;
+                    window.generatedConfigContent = data.config_content;
+                    showAlert('配置生成成功', 'success');
+                } else {
+                    showAlert('生成失败: ' + data.detail, 'error');
+                }
+            } catch (error) {
+                showAlert('请求失败: ' + error.message, 'error');
+            }
+        }
+
+        async function saveConfig() {
+            const sourceType = document.getElementById('sourceType').value;
+            let sourceConfig = {};
+
+            if (sourceType === 'mysql') {
+                sourceConfig = {
+                    host: document.getElementById('sourceHost').value,
+                    port: parseInt(document.getElementById('sourcePort').value),
+                    user: document.getElementById('sourceUser').value,
+                    password: document.getElementById('sourcePassword').value,
+                    database: document.getElementById('sourceDatabase').value,
+                    table: document.getElementById('sourceTable').value,
+                    is_cdc: document.getElementById('sourceCdc').checked,
+                    server_id: document.getElementById('serverId').value,
+                    startup_mode: document.getElementById('startupMode').value
+                };
+            } else if (sourceType === 'api') {
+                sourceConfig = {
+                    url: document.getElementById('apiUrl').value,
+                    method: document.getElementById('apiMethod').value,
+                    content_field: document.getElementById('contentField').value,
+                    returns_array: true
+                };
+            }
+
+            const sinkConfig = {
+                host: document.getElementById('sinkHost').value,
+                port: parseInt(document.getElementById('sinkPort').value),
+                user: document.getElementById('sinkUser').value,
+                password: document.getElementById('sinkPassword').value,
+                database: document.getElementById('sinkDatabase').value,
+                table: document.getElementById('sinkTable').value,
+                create_table_if_not_exists: document.getElementById('createTable').value === 'true'
+            };
+
+            const configName = prompt('请输入配置名称:');
+            if (!configName) return;
+
+            const request = {
+                name: configName,
+                source_type: sourceType,
+                source_config: sourceConfig,
+                sink_config: sinkConfig,
+                field_mapping: getFieldMapping(),
+                job_mode: document.getElementById('jobMode').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/config/save`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(request)
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showAlert('配置已保存，ID: ' + data.config_id, 'success');
+                } else {
+                    showAlert('保存失败: ' + data.detail, 'error');
+                }
+            } catch (error) {
+                showAlert('请求失败: ' + error.message, 'error');
+            }
+        }
+
+        async function loadConfigs() {
+            try {
+                const response = await fetch(`${API_BASE}/configs`);
+                const configs = await response.json();
+                const container = document.getElementById('configsList');
+                if (configs.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info">暂无保存的配置</div>';
+                    return;
+                }
+                container.innerHTML = configs.map(c => `
+                    <div class="job-item">
+                        <div>
+                            <strong>${c.name}</strong>
+                            <div style="font-size: 12px; color: #666;">${c.source_type} | ${c.created_at}</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary btn-sm" onclick="loadConfigToForm('${c.id}')">编辑</button>
+                            <button class="btn btn-success btn-sm" onclick="runSavedConfig('${c.id}')">执行</button>
+                            <button class="btn btn-secondary btn-sm" onclick="deleteConfig('${c.id}')">删除</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                showAlert('加载配置失败: ' + error.message, 'error');
+            }
+        }
+
+        async function loadConfigToForm(configId) {
+            try {
+                const response = await fetch(`${API_BASE}/config/${configId}`);
+                const config = await response.json();
+                document.querySelector('[data-tab="config"]').click();
+                document.getElementById('sourceType').value = config.source_type;
+                toggleSourceFields();
+                showAlert('配置已加载，请点击"生成配置"查看', 'info');
+            } catch (error) {
+                showAlert('加载配置失败: ' + error.message, 'error');
+            }
+        }
+
+        async function runSavedConfig(configId) {
+            if (!confirm('确定要执行此配置吗？')) return;
+            try {
+                const response = await fetch(`${API_BASE}/job/run`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({config_id: configId})
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showAlert('任务已提交，Job ID: ' + data.job_id, 'success');
+                    document.querySelector('[data-tab="jobs"]').click();
+                    setTimeout(loadJobs, 1000);
+                } else {
+                    showAlert('提交失败: ' + data.detail, 'error');
+                }
+            } catch (error) {
+                showAlert('请求失败: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteConfig(configId) {
+            if (!confirm('确定要删除此配置吗？')) return;
+            try {
+                const response = await fetch(`${API_BASE}/config/${configId}`, {method: 'DELETE'});
+                if (response.ok) {
+                    showAlert('配置已删除', 'success');
+                    loadConfigs();
+                } else {
+                    showAlert('删除失败', 'error');
+                }
+            } catch (error) {
+                showAlert('请求失败: ' + error.message, 'error');
+            }
+        }
+
+        async function runJob() {
+            if (!window.generatedConfigContent) {
+                showAlert('请先生成配置', 'error');
+                return;
+            }
+            if (!confirm('确定要执行此配置吗？')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/job/run`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({config_content: window.generatedConfigContent})
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showAlert('任务已提交，Job ID: ' + data.job_id, 'success');
+                    document.querySelector('[data-tab="jobs"]').click();
+                    setTimeout(loadJobs, 1000);
+                } else {
+                    showAlert('提交失败: ' + data.detail, 'error');
+                }
+            } catch (error) {
+                showAlert('请求失败: ' + error.message, 'error');
+            }
+        }
+
+        async function loadJobs() {
+            try {
+                const response = await fetch(`${API_BASE}/jobs`);
+                const jobs = await response.json();
+                const container = document.getElementById('jobsList');
+                if (jobs.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info">暂无任务记录</div>';
+                    return;
+                }
+                container.innerHTML = jobs.map(j => `
+                    <div class="job-item">
+                        <div>
+                            <strong>${j.job_id}</strong>
+                            <div style="font-size: 12px; color: #666;">
+                                ${j.status} | 开始: ${j.start_time || '-'}
+                            </div>
+                        </div>
+                        <span class="job-status ${j.status.toLowerCase()}">${j.status}</span>
+                    </div>
+                `).join('');
+            } catch (error) {
+                showAlert('加载任务失败: ' + error.message, 'error');
+            }
+        }
+
+        setInterval(loadJobs, 5000);
+    </script>
+</body>
+</html>

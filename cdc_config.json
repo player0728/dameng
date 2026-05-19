@@ -1,0 +1,108 @@
+[
+  {
+    "source": {
+      "host": "127.0.0.1",
+      "port": "5236",
+      "user": "SYSDBA",
+      "password": "Qwer1234",
+      "database": "TEST",
+      "table": "USERS",
+      "columns": [
+        {
+          "source": "USER_ID",
+          "target": "USER_ID",
+          "type": "INT"
+        },
+        {
+          "source": "USERNAME",
+          "target": "USERNAME",
+          "type": "STRING"
+        },
+        {
+          "source": "PASSWORD",
+          "target": "PASSWORD",
+          "type": "STRING"
+        },
+        {
+          "source": "AGE",
+          "target": "AGE",
+          "type": "INT"
+        },
+        {
+          "source": "PHONE",
+          "target": "PHONE",
+          "type": "STRING"
+        }
+      ]
+    },
+    "monitored_table": {
+      "table_name": "USERS",
+      "primary_key": "USER_ID",
+      "columns": [
+        {
+          "source": "USER_ID",
+          "target": "USER_ID",
+          "type": "INT"
+        },
+        {
+          "source": "USERNAME",
+          "target": "USERNAME",
+          "type": "STRING"
+        },
+        {
+          "source": "PASSWORD",
+          "target": "PASSWORD",
+          "type": "STRING"
+        },
+        {
+          "source": "AGE",
+          "target": "AGE",
+          "type": "INT"
+        },
+        {
+          "source": "PHONE",
+          "target": "PHONE",
+          "type": "STRING"
+        }
+      ]
+    },
+    "target_type": "dameng",
+    "target": {
+      "host": "127.0.0.1",
+      "port": "5236",
+      "user": "SYSDBA",
+      "password": "Qwer1234",
+      "database": "TEST",
+      "table": "TARGET",
+      "columns": [
+        {
+          "source": "USER_ID",
+          "target": "USER_ID",
+          "type": "INT"
+        },
+        {
+          "source": "USERNAME",
+          "target": "USERNAME",
+          "type": "STRING"
+        },
+        {
+          "source": "PASSWORD",
+          "target": "PASSWORD",
+          "type": "STRING"
+        },
+        {
+          "source": "AGE",
+          "target": "AGE",
+          "type": "INT"
+        },
+        {
+          "source": "PHONE",
+          "target": "PHONE",
+          "type": "STRING"
+        }
+      ]
+    },
+    "polling_interval": 5,
+    "status": "stopped"
+  }
+]

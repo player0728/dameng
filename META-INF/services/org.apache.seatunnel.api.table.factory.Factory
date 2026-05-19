@@ -1,0 +1,13 @@
+org.apache.seatunnel.connectors.seatunnel.cdc.mysql.source.MySqlIncrementalSourceFactory
+org.apache.seatunnel.connectors.seatunnel.common.multitablesink.MultiTableSinkFactory
+org.apache.seatunnel.connectors.seatunnel.jdbc.catalog.dm.DamengCatalogFactory
+org.apache.seatunnel.connectors.seatunnel.jdbc.catalog.mysql.MySqlCatalogFactory
+org.apache.seatunnel.connectors.seatunnel.jdbc.catalog.oceanbase.OceanBaseCatalogFactory
+org.apache.seatunnel.connectors.seatunnel.jdbc.catalog.oracle.OracleCatalogFactory
+org.apache.seatunnel.connectors.seatunnel.jdbc.catalog.psql.PostgresCatalogFactory
+org.apache.seatunnel.connectors.seatunnel.jdbc.catalog.sqlserver.SqlServerCatalogFactory
+org.apache.seatunnel.connectors.seatunnel.jdbc.catalog.tidb.TiDBCatalogFactory
+org.apache.seatunnel.connectors.seatunnel.jdbc.catalog.xugu.XuguCatalogFactory
+org.apache.seatunnel.connectors.seatunnel.jdbc.sink.JdbcSinkFactory
+org.apache.seatunnel.connectors.seatunnel.jdbc.source.JdbcSourceFactory
+org.apache.seatunnel.connectors.seatunnel.common.multitablesink.MultiTableSinkFactory
