@@ -3211,6 +3211,7 @@ if FASTAPI_AVAILABLE:
         api_url: str
         api_method: str
         json_path: str
+        target_db_type: str
         target_host: str
         target_port: int
         target_database: str
@@ -3307,6 +3308,9 @@ if FASTAPI_AVAILABLE:
         except Exception as e:
             return -1, "", str(e)
     
+    # 缓存上次检查时间，避免频繁 fetch
+    last_fetch_time = {}
+    
     def get_git_repo_info(local_path: str) -> Dict[str, Any]:
         """获取 Git 仓库信息"""
         returncode, branch, _ = run_git_command_fastapi(
@@ -3321,14 +3325,40 @@ if FASTAPI_AVAILABLE:
             cwd=local_path
         )
         if returncode != 0:
-            return {"error": "无法获取提交信息"}
+            # 空仓库（没有提交），视为有更新需要同步
+            current_branch = branch.strip()
+            
+            # 执行 fetch 获取远程信息
+            now = time.time()
+            last_fetch = last_fetch_time.get(local_path, 0)
+            if now - last_fetch > 10:
+                run_git_command_fastapi(
+                    ["git", "fetch", "origin"],
+                    cwd=local_path
+                )
+                last_fetch_time[local_path] = now
+            
+            returncode, remote_commit, _ = run_git_command_fastapi(
+                ["git", "rev-parse", f"origin/{current_branch}"],
+                cwd=local_path
+            )
+            
+            return {
+                "branch": current_branch,
+                "local_commit": "empty",
+                "remote_commit": remote_commit.strip()[:7] if returncode == 0 else "unknown",
+                "has_updates": returncode == 0  # 空仓库总是有更新需要同步
+            }
         
-        returncode, remote_commit, _ = run_git_command_fastapi(
+        current_branch = branch.strip()
+        
+        # 每次都执行 fetch 以确保及时检测到更新
+        # 移除缓存机制，因为缓存会导致更新检测延迟
+        run_git_command_fastapi(
             ["git", "fetch", "origin"],
             cwd=local_path
         )
         
-        current_branch = branch.strip()
         returncode, remote_commit, _ = run_git_command_fastapi(
             ["git", "rev-parse", f"origin/{current_branch}"],
             cwd=local_path
@@ -3364,11 +3394,33 @@ if FASTAPI_AVAILABLE:
                         task['last_update'] = datetime.now().isoformat()
                         
                         if mode == 'auto':
-                            # 自动模式：直接拉取，不保留更新提示
+                            # 自动模式：直接拉取，不保留更新提示（尝试多种方式）
+                            branch = task.get('branch', 'main')
                             returncode, stdout, stderr = run_git_command_fastapi(
                                 ["git", "pull", "origin"],
                                 cwd=local_path
                             )
+                            
+                            if returncode != 0:
+                                # 方式2: 指定分支拉取
+                                returncode, stdout, stderr = run_git_command_fastapi(
+                                    ["git", "pull", "origin", branch],
+                                    cwd=local_path
+                                )
+                            
+                            if returncode != 0:
+                                # 方式3: 先fetch再merge
+                                returncode_fetch, stdout_fetch, stderr_fetch = run_git_command_fastapi(
+                                    ["git", "fetch", "origin"],
+                                    cwd=local_path
+                                )
+                                
+                                if returncode_fetch == 0:
+                                    returncode, stdout, stderr = run_git_command_fastapi(
+                                        ["git", "merge", f"origin/{branch}"],
+                                        cwd=local_path
+                                    )
+                            
                             if returncode == 0:
                                 task['last_pull'] = datetime.now().isoformat()
                                 task['pull_status'] = 'success'
@@ -3455,6 +3507,8 @@ if FASTAPI_AVAILABLE:
         database = task['target_database']
         table = task['target_table']
         
+        print(f"[DEBUG] sync_to_database called - db_type={db_type}, host={host}, port={port}, database={database}, table={table}")
+        
         try:
             if db_type == 'mysql':
                 import pymysql
@@ -3482,8 +3536,43 @@ if FASTAPI_AVAILABLE:
                     connection.commit()
                 
                 connection.close()
+            elif db_type == 'dameng':
+                import pyodbc
+                conn_str = f"DRIVER={{DM8 ODBC DRIVER}};SERVER={host};PORT={port};UID={user};PWD={password};DATABASE={database}"
+                connection = pyodbc.connect(conn_str)  # 不启用自动提交，手动控制事务
+                
+                try:
+                    with connection.cursor() as cursor:
+                        # 在指定的 schema 下创建表（使用完整的 schema.table 格式）
+                        full_table_name = f"{database.upper()}.{table.upper()}"
+                        
+                        # 使用更可靠的方式检查表是否存在：尝试查询表
+                        table_exists = False
+                        try:
+                            count_sql = f"SELECT COUNT(*) FROM {full_table_name}"
+                            cursor.execute(count_sql)
+                            cursor.fetchone()
+                            table_exists = True
+                        except Exception:
+                            table_exists = False
+                        
+                        if not table_exists:
+                            # 自动创建表（在指定的 schema 下，使用完整路径）
+                            create_table_from_data_dameng(cursor, full_table_name, data)
+                            task['table_created'] = True
+                            # 提交表创建
+                            connection.commit()
+                        
+                        # 插入数据（使用完整表名）
+                        insert_data_dameng(cursor, full_table_name, data)
+                        # 提交数据插入
+                        connection.commit()
+                
+                finally:
+                    connection.close()
         except Exception as e:
-            task['sync_status'] = f'db_error: {str(e)[:50]}'
+            print(f"[ERROR] 达梦数据库操作失败: {str(e)}")
+            task['sync_status'] = f'db_error: {str(e)[:100]}'
     
     def create_table_from_data(cursor, table_name, data):
         """根据数据自动创建表"""
@@ -3534,6 +3623,76 @@ if FASTAPI_AVAILABLE:
         for row in data:
             try:
                 cursor.execute(insert_sql, row)
+            except Exception:
+                pass  # 跳过插入失败的行
+
+    def create_table_from_data_dameng(cursor, table_name, data):
+        """根据数据自动创建达梦数据库表"""
+        if not data or not isinstance(data, list) or len(data) == 0:
+            return
+        
+        sample = data[0]
+        columns = []
+        
+        for key, value in sample.items():
+            sql_type = get_dameng_sql_type(value)
+            columns.append(f"{key.upper()} {sql_type}")
+        
+        # 使用 IF NOT EXISTS 避免表已存在的错误
+        create_sql = f"CREATE TABLE IF NOT EXISTS {table_name.upper()} ({', '.join(columns)})"
+        print(f"[DEBUG] 执行创建表SQL: {create_sql}")
+        cursor.execute(create_sql)
+        print(f"[DEBUG] 创建表SQL执行成功")
+        # 强制提交
+        cursor.commit()
+
+    def get_dameng_sql_type(value):
+        """根据值推断达梦 SQL 类型"""
+        if isinstance(value, int):
+            return 'INTEGER'
+        elif isinstance(value, float):
+            return 'DECIMAL(10,2)'
+        elif isinstance(value, bool):
+            return 'BOOLEAN'
+        elif isinstance(value, dict) or isinstance(value, list):
+            return 'CLOB'
+        else:
+            # 字符串类型，根据长度选择
+            str_value = str(value)
+            if len(str_value) <= 255:
+                return 'VARCHAR(255)'
+            elif len(str_value) <= 4000:
+                return 'VARCHAR(4000)'
+            else:
+                return 'CLOB'
+
+    def insert_data_dameng(cursor, table_name, data):
+        """批量插入数据到达梦数据库（增量同步，避免重复）"""
+        if not data or not isinstance(data, list) or len(data) == 0:
+            return
+        
+        sample = data[0]
+        columns = [k.upper() for k in sample.keys()]
+        placeholders = ['?' for _ in sample.keys()]
+        
+        # 检查是否有 ID 字段作为唯一标识
+        has_id = 'ID' in columns or 'id' in [k.lower() for k in sample.keys()]
+        
+        for row in data:
+            try:
+                # 如果有 ID 字段，先检查是否已存在
+                if has_id:
+                    id_value = row.get('id') or row.get('ID')
+                    if id_value:
+                        check_sql = f"SELECT COUNT(*) FROM {table_name.upper()} WHERE ID = ?"
+                        cursor.execute(check_sql, (id_value,))
+                        count = cursor.fetchone()[0]
+                        if count > 0:
+                            continue  # 已存在，跳过
+                
+                values = [row.get(k) for k in sample.keys()]
+                insert_sql = f"INSERT INTO {table_name.upper()} ({', '.join(columns)}) VALUES ({', '.join(placeholders)})"
+                cursor.execute(insert_sql, values)
             except Exception:
                 pass  # 跳过插入失败的行
 
@@ -3927,7 +4086,20 @@ if FASTAPI_AVAILABLE:
         
         # 检查是否是有效的 Git 仓库
         git_dir = os.path.join(task.local_path, '.git')
-        if not os.path.exists(git_dir):
+        is_new_repo = not os.path.exists(git_dir)
+        
+        # 如果目录存在但没有提交，也视为新仓库需要初始化
+        if not is_new_repo:
+            # 检查是否有提交记录
+            returncode, stdout, stderr = run_git_command_fastapi(
+                ["git", "rev-parse", "HEAD"],
+                cwd=task.local_path
+            )
+            if returncode != 0:
+                # 没有提交记录，视为新仓库
+                is_new_repo = True
+        
+        if is_new_repo:
             # 如果不是 Git 仓库，尝试初始化
             returncode, stdout, stderr = run_git_command_fastapi(
                 ["git", "init"],
@@ -3936,7 +4108,14 @@ if FASTAPI_AVAILABLE:
             if returncode != 0:
                 raise HTTPException(status_code=400, detail=f"无法初始化 Git 仓库: {stderr}")
             
-            # 配置远程仓库
+            # 配置远程仓库（先检查是否已存在，如果存在则先删除）
+            returncode, stdout, stderr = run_git_command_fastapi(
+                ["git", "remote", "remove", "origin"],
+                cwd=task.local_path
+            )
+            # 忽略删除失败（可能原本就不存在）
+            
+            # 添加远程仓库
             returncode, stdout, stderr = run_git_command_fastapi(
                 ["git", "remote", "add", "origin", task.repo_url],
                 cwd=task.local_path
@@ -3944,33 +4123,39 @@ if FASTAPI_AVAILABLE:
             if returncode != 0:
                 raise HTTPException(status_code=400, detail=f"无法配置远程仓库: {stderr}")
             
-            # 设置 pull 默认分支
+            # 创建本地分支
             returncode, stdout, stderr = run_git_command_fastapi(
-                ["git", "branch", "--set-upstream-to", f"origin/{task.branch}", task.branch],
+                ["git", "checkout", "-b", task.branch],
                 cwd=task.local_path
             )
-            # 如果分支不存在，先创建
             if returncode != 0:
-                returncode, stdout, stderr = run_git_command_fastapi(
-                    ["git", "checkout", "-b", task.branch],
-                    cwd=task.local_path
-                )
-                if returncode != 0:
-                    raise HTTPException(status_code=400, detail=f"无法创建分支: {stderr}")
-                
-                # 设置上游分支
-                returncode, stdout, stderr = run_git_command_fastapi(
-                    ["git", "branch", "--set-upstream-to", f"origin/{task.branch}"],
-                    cwd=task.local_path
-                )
-                if returncode != 0:
-                    # 忽略上游设置失败，后续 pull 时可能需要指定分支
-                    pass
+                raise HTTPException(status_code=400, detail=f"无法创建分支: {stderr}")
         
         task_dict = task.model_dump()
         task_dict['status'] = 'stopped'
         task_dict['has_updates'] = False
         task_dict['pending_pull'] = False
+        
+        # 设置最后更新时间（无论是否是新仓库）
+        # 如果是新初始化的仓库，设置为当前时间
+        # 如果是已存在的仓库，获取最后一次提交的时间
+        if is_new_repo:
+            task_dict['last_update'] = datetime.now().isoformat()
+        else:
+            # 尝试获取最后一次提交的时间
+            returncode, stdout, stderr = run_git_command_fastapi(
+                ["git", "log", "-1", "--format=%ci"],
+                cwd=task.local_path
+            )
+            if returncode == 0 and stdout.strip():
+                # 转换为 ISO 格式
+                try:
+                    commit_time = datetime.strptime(stdout.strip(), "%Y-%m-%d %H:%M:%S %z")
+                    task_dict['last_update'] = commit_time.isoformat()
+                except:
+                    task_dict['last_update'] = datetime.now().isoformat()
+            else:
+                task_dict['last_update'] = datetime.now().isoformat()
         
         with running_monitors_lock:
             git_tasks[next_git_task_id] = task_dict
@@ -4053,6 +4238,57 @@ if FASTAPI_AVAILABLE:
         if task_id not in git_tasks:
             raise HTTPException(status_code=404, detail="任务不存在")
         return GitTaskResponse(id=task_id, **git_tasks[task_id])
+    
+    @app.get("/api/git/debug/{task_id}", tags=["Git 监控"])
+    async def debug_git_task(task_id: int):
+        """调试 Git 任务 - 返回详细信息"""
+        if task_id not in git_tasks:
+            raise HTTPException(status_code=404, detail="任务不存在")
+        
+        task = git_tasks[task_id]
+        local_path = task['local_path']
+        
+        # 检查路径是否存在
+        path_exists = os.path.exists(local_path)
+        
+        # 检查是否是 Git 仓库
+        git_dir = os.path.join(local_path, '.git')
+        is_git_repo = os.path.exists(git_dir)
+        
+        # 获取仓库信息
+        repo_info = {}
+        if os.path.exists(local_path):
+            repo_info = get_git_repo_info(local_path)
+        
+        # 获取远程配置
+        returncode, remotes, stderr = run_git_command_fastapi(
+            ["git", "remote", "-v"],
+            cwd=local_path
+        )
+        
+        # 获取分支信息
+        returncode_branch, branch, stderr_branch = run_git_command_fastapi(
+            ["git", "branch", "-v"],
+            cwd=local_path
+        )
+        
+        # 获取状态
+        returncode_status, status, stderr_status = run_git_command_fastapi(
+            ["git", "status"],
+            cwd=local_path
+        )
+        
+        return {
+            "task_id": task_id,
+            "local_path": local_path,
+            "path_exists": path_exists,
+            "is_git_repo": is_git_repo,
+            "repo_info": repo_info,
+            "remotes": remotes,
+            "branch_info": branch,
+            "status": status,
+            "task_data": task
+        }
     
     @app.post("/api/git/tasks/{task_id}/start", tags=["Git 监控"])
     async def start_git_task(task_id: int):
@@ -4333,19 +4569,34 @@ if FASTAPI_AVAILABLE:
                         if key in data:
                             data = data[key]
                 
-                if isinstance(data, list):
+                if isinstance(data, list) and len(data) > 0:
+                    # 同步数据到数据库
+                    sync_to_database(task, data)
                     task['records_synced'] = len(data)
                     task['last_sync'] = datetime.now().isoformat()
+                    task['sync_status'] = 'success'
                     return {
                         "message": "同步成功",
                         "task_id": task_id,
                         "records_count": len(data)
+                    }
+                elif isinstance(data, dict):
+                    # 单个对象也支持，包装成数组
+                    sync_to_database(task, [data])
+                    task['records_synced'] = 1
+                    task['last_sync'] = datetime.now().isoformat()
+                    task['sync_status'] = 'success'
+                    return {
+                        "message": "同步成功",
+                        "task_id": task_id,
+                        "records_count": 1
                     }
                 else:
                     return {"message": "数据不是数组格式", "task_id": task_id}
             else:
                 raise HTTPException(status_code=500, detail=f"HTTP 错误: {response.status_code}")
         except Exception as e:
+            task['sync_status'] = f'error: {str(e)[:50]}'
             raise HTTPException(status_code=500, detail=str(e))
 
     # ==================== 数据库同步 API ====================
