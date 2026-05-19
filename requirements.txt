@@ -1,0 +1,14 @@
+# API 数据同步与 Git 仓库管理平台 - 依赖列表
+
+# FastAPI Web 框架
+fastapi>=0.100.0
+uvicorn>=0.23.2
+
+# 数据库驱动
+pymysql>=1.1.0           # MySQL 数据库驱动
+pyodbc>=5.0.1            # 达梦数据库 ODBC 驱动
+
+# HTTP 请求库
+requests>=2.31.0
+
+# Python 版本要求: Python 3.8+
